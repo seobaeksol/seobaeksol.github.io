@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Intro on Seobaeksol Blog</title><link>https://seobaeksol.github.io/categories/intro/</link><description>Recent content in Intro on Seobaeksol Blog</description><image><title>Seobaeksol Blog</title><url>https://seobaeksol.github.io/images/profile.jpg</url><link>https://seobaeksol.github.io/images/profile.jpg</link></image><generator>Hugo -- 0.147.0</generator><language>en</language><lastBuildDate>Tue, 29 Apr 2025 13:53:58 +0900</lastBuildDate><atom:link href="https://seobaeksol.github.io/categories/intro/index.xml" rel="self" type="application/rss+xml"/><item><title>Hello World</title><link>https://seobaeksol.github.io/posts/2025-04-29-hello-world/</link><pubDate>Tue, 29 Apr 2025 13:53:58 +0900</pubDate><guid>https://seobaeksol.github.io/posts/2025-04-29-hello-world/</guid><description>&lt;h1 id="welcome">Welcome!&lt;/h1>
+&lt;p>It&amp;rsquo;s my first blog post!&lt;/p>
+&lt;div class="highlight">&lt;div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+&lt;table style="border-spacing:0;padding:0;margin:0;border:0;">&lt;tr>&lt;td style="vertical-align:top;padding:0;margin:0;border:0;">
+&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code>&lt;span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+&lt;/span>&lt;span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-ts" data-lang="ts">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">let&lt;/span> &lt;span style="color:#a6e22e">test&lt;/span> &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#ae81ff">10&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">console&lt;/span>.&lt;span style="color:#a6e22e">log&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;test -&amp;gt;&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">test&lt;/span>);
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item></channel></rss>
