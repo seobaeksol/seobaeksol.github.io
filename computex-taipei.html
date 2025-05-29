@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC 부품 및 주변기기 회사 정보 탐색기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .company-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .company-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-sky-700">PC 부품 및 주변기기 회사 정보</h1>
+            <p class="text-slate-600 mt-2">다양한 PC 관련 회사들의 정보를 검색하고 필터링하여 살펴보세요.</p>
+        </header>
+
+        <section id="filters" class="mb-8 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-sky-600">검색 및 필터</h2>
+            <p class="text-sm text-slate-500 mb-4">아래 필터를 사용하여 회사 목록을 탐색할 수 있습니다. 회사 이름으로 검색하거나 관심 있는 제품 카테고리를 선택하세요.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-1">회사 이름 검색</label>
+                    <input type="text" id="searchInput" placeholder="회사 이름 입력..." class="w-full p-3 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="categoryFilter" class="block text-sm font-medium text-slate-700 mb-1">제품 카테고리 선택</label>
+                    <select id="categoryFilter" class="w-full p-3 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 transition duration-150 bg-white">
+                        <option value="">모든 카테고리</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section id="chartSection" class="mb-8 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-sky-600">제품 카테고리별 회사 분포</h2>
+            <p class="text-sm text-slate-500 mb-4">이 차트는 각 주요 제품 카테고리별로 등록된 회사의 수를 보여줍니다. 시장의 전반적인 분포를 파악하는 데 도움이 됩니다.</p>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <main id="companyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </main>
+        
+        <div id="noResults" class="text-center py-12 text-slate-500 hidden">
+            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            </svg>
+            <h3 class="mt-2 text-lg font-medium">검색 결과 없음</h3>
+            <p class="mt-1 text-sm">선택하신 필터에 맞는 회사가 없습니다. 다른 검색어나 필터를 시도해보세요.</p>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 mt-12 border-t border-slate-200">
+        <p class="text-sm text-slate-500">&copy; 2025 PC 회사 정보 탐색기. 모든 정보는 제공된 데이터를 기반으로 합니다.</p>
+    </footer>
+
+    <script>
+        const companyData = [
+            { name: "1stPlayer", description: "주로 PC 케이스, 파워 서플라이, 쿨링 솔루션 등 게이밍 하드웨어를 제조하는 회사입니다.", products: ["PC 케이스", "파워 서플라이", "CPU 쿨러", "게이밍 의자", "게이밍 주변기기"] },
+            { name: "AONE", description: "PC 케이스, 파워 서플라이, 쿨러 등 컴퓨터 주변기기를 생산합니다.", products: ["파워서플라이", "PC 케이스", "쿨러", "키보드/마우스", "모니터"] },
+            { name: "ASRock", description: "메인보드, 미니 PC, 그래픽카드 등을 제조하는 대만의 주요 하드웨어 회사입니다.", products: ["메인보드", "그래픽카드", "미니 PC"] },
+            { name: "ASUS", description: "메인보드, 노트북, 그래픽카드, 스마트폰 등 다양한 컴퓨터 하드웨어 및 전자제품을 생산하는 세계적인 기업입니다.", products: ["메인보드", "노트북 (ROG, ZenBook 등)", "그래픽카드", "스마트폰", "모니터", "게이밍 주변기기"] },
+            { name: "BIOSTAR", description: "메인보드, 그래픽카드, SSD 등 컴퓨터 부품을 제조합니다.", products: ["메인보드", "그래픽카드", "SSD"] },
+            { name: "COLORFUL", description: "그래픽카드, 메인보드, SSD, 메모리 등 PC 하드웨어를 주로 생산하는 중국 기업입니다.", products: ["그래픽카드", "메인보드", "SSD", "메모리"] },
+            { name: "Cooler Master", description: "PC 케이스, 파워 서플라이, CPU 쿨러, 게이밍 주변기기 등 쿨링 및 하드웨어 솔루션을 제공합니다.", products: ["PC 케이스", "CPU 쿨러", "파워 서플라이", "게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "CORSAIR", description: "고성능 게이밍 PC 부품 및 주변기기(메모리, 파워 서플라이, 케이스, 키보드, 마우스 등)를 전문으로 합니다.", products: ["메모리(RAM)", "파워 서플라이", "PC 케이스", "CPU 쿨러", "게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "COUGAR", description: "게이밍 PC 케이스, 파워 서플라이, 쿨링 팬, 게이밍 의자 및 주변기기를 생산합니다.", products: ["게이밍 PC 케이스", "파워 서플라이", "쿨링 팬", "게이밍 의자", "게이밍 주변기기"] },
+            { name: "darkFlash", description: "PC 케이스, 쿨러, 파워 서플라이 등 컴퓨터 하드웨어 및 액세서리를 제조합니다.", products: ["PC 케이스", "CPU 쿨러", "쿨링 팬", "파워 서플라이"] },
+            { name: "DeepCool", description: "CPU 쿨러, PC 케이스, 파워 서플라이 등 컴퓨터 쿨링 솔루션 및 하드웨어를 제공합니다.", products: ["CPU 쿨러", "PC 케이스", "파워 서플라이"] },
+            { name: "FSP", description: "파워 서플라이(PSU)를 전문적으로 제조하는 대만의 회사입니다.", products: ["파워 서플라이(PSU)"] },
+            { name: "GAMDIAS", description: "게이밍 키보드, 마우스, 헤드셋 등 게이밍 주변기기를 생산합니다.", products: ["게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "GIGABYTE", description: "메인보드, 그래픽카드, 노트북, PC 주변기기 등 다양한 컴퓨터 하드웨어를 제조하는 대만의 선도 기업입니다.", products: ["메인보드", "그래픽카드", "노트북", "모니터", "PC 주변기기"] },
+            { name: "KLEVV", description: "메모리(RAM) 및 SSD를 제조하는 회사입니다.", products: ["메모리(RAM)", "SSD"] },
+            { name: "LIAN LI", description: "고급 PC 케이스, 쿨링 솔루션, 파워 서플라이 등 프리미엄 컴퓨터 하드웨어를 생산합니다.", products: ["PC 케이스", "수랭 쿨러", "쿨링 팬", "파워 서플라이"] },
+            { name: "MANLI", description: "그래픽카드, 메인보드, SSD 등 컴퓨터 하드웨어 부품을 제조합니다.", products: ["그래픽카드", "메인보드", "SSD"] },
+            { name: "MAXSUN", description: "그래픽카드, 메인보드, SSD 등 PC 하드웨어를 생산하는 중국의 회사입니다.", products: ["그래픽카드", "메인보드", "SSD"] },
+            { name: "Micronics", description: "파워 서플라이, PC 케이스, 키보드, 마우스 등 컴퓨터 주변기기를 제조하는 한국 기업입니다.", products: ["파워 서플라이", "PC 케이스", "키보드", "마우스", "헤드셋"] },
+            { name: "MONTECH", description: "PC 케이스, 파워 서플라이, 쿨러 등 컴퓨터 하드웨어를 생산합니다.", products: ["PC 케이스", "파워 서플라이", "쿨링 팬"] },
+            { name: "NZXT", description: "PC 케이스, 쿨링 솔루션, 파워 서플라이 등 게이밍 및 고성능 PC 하드웨어를 전문으로 합니다.", products: ["PC 케이스", "수랭 쿨러", "쿨링 팬", "파워 서플라이"] },
+            { name: "Patriot", description: "메모리(RAM), SSD, USB 플래시 드라이브 등 스토리지 및 메모리 제품을 제조합니다.", products: ["메모리(RAM)", "SSD", "USB 플래시 드라이브"] },
+            { name: "PCCOOLER", description: "CPU 쿨러, 케이스 쿨러 등 PC 쿨링 솔루션을 전문으로 합니다.", products: ["CPU 쿨러", "케이스 팬"] },
+            { name: "Seasonic", description: "고품질 파워 서플라이(PSU)를 전문적으로 제조하는 회사입니다.", products: ["파워 서플라이(PSU)"] },
+            { name: "Segotep", description: "PC 케이스, 파워 서플라이, 쿨러 등 컴퓨터 하드웨어 부품을 생산합니다.", products: ["PC 케이스", "파워 서플라이", "수랭 쿨러"] },
+            { name: "SilverStone", description: "PC 케이스, 파워 서플라이, 쿨링 솔루션 등 다양한 컴퓨터 하드웨어를 제조합니다.", products: ["PC 케이스", "파워 서플라이", "CPU 쿨러", "쿨링 팬"] },
+            { name: "SuperFlower", description: "고성능 파워 서플라이(PSU)를 전문적으로 제조하는 회사입니다.", products: ["파워 서플라이(PSU)"] },
+            { name: "TeamGroup", description: "메모리(RAM), SSD, USB 플래시 드라이브, 메모리 카드 등 스토리지 및 메모리 제품을 생산합니다.", products: ["메모리(RAM)", "SSD", "USB 플래시 드라이브", "메모리 카드"] },
+            { name: "Thermaltake", description: "PC 케이스, 파워 서플라이, 쿨링 솔루션, 게이밍 주변기기 등 다양한 PC 하드웨어를 제조합니다.", products: ["PC 케이스", "CPU 쿨러", "파워 서플라이", "게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "Transcend", description: "메모리(RAM), SSD, USB 플래시 드라이브, 외장하드 등 스토리지 및 멀티미디어 제품을 제조합니다.", products: ["메모리(RAM)", "SSD", "USB 플래시 드라이브", "외장하드", "메모리 카드"] },
+            { name: "TRYX", description: "주로 게이밍 주변기기 및 PC 액세서리를 생산합니다.", products: ["게이밍 주변기기", "PC 액세서리"] },
+            { name: "zalman", description: "CPU 쿨러, PC 케이스, 파워 서플라이 등 컴퓨터 쿨링 솔루션 및 하드웨어를 제조합니다.", products: ["CPU 쿨러", "PC 케이스", "파워 서플라이"] },
+            { name: "ACEGEEK", description: "주로 게이밍 주변기기 및 액세서리를 취급하는 것으로 보입니다.", products: ["PC 케이스"] },
+            { name: "Acer", description: "노트북, 데스크톱 PC, 모니터, 프로젝터 등 다양한 IT 제품을 생산하는 대만의 글로벌 기업입니다.", products: ["노트북", "데스크톱 PC", "모니터", "프로젝터", "게이밍 PC 및 주변기기"] },
+            { name: "ACME Portable", description: "휴대용 워크스테이션 및 서버를 전문으로 제조하는 회사입니다.", products: ["휴대용 워크스테이션", "휴대용 서버"] },
+            { name: "AFT", description: "주로 플래시 메모리 카드 리더기 및 관련 액세서리를 생산합니다.", products: ["플래시 메모리 카드 리더기", "관련 액세서리"] },
+            { name: "Aio", description: "일체형 수랭 쿨러(AIO cooler)와 같은 쿨링 솔루션을 의미할 수 있습니다.", products: ["일체형 수랭 쿨러(AIO cooler)"] },
+            { name: "akasa", description: "PC 케이스, 쿨링 솔루션, 파워 서플라이, 케이블 등 컴퓨터 액세서리를 제조합니다.", products: ["PC 케이스", "쿨링 솔루션 (CPU 쿨러, 팬)", "파워 서플라이"] },
+            { name: "Akko", description: "기계식 키보드, 키캡, 게이밍 주변기기 등을 전문으로 합니다.", products: ["기계식 키보드", "키캡", "키보드 스위치", "게이밍 마우스"] },
+            { name: "Alphacool", description: "수랭 쿨링 시스템 및 부품을 전문적으로 제조합니다.", products: ["CPU 수랭 쿨러", "GPU 수랭 쿨러", "라디에이터", "피팅 등 수랭 쿨링 시스템 부품"] },
+            { name: "ALSEYE", description: "CPU 쿨러, 케이스 팬 등 PC 쿨링 솔루션을 생산합니다.", products: ["일체형 수랭 쿨러", "CPU 쿨러", "케이스 팬", "써멀구리스"] },
+            { name: "AMD", description: "CPU(Ryzen), GPU(Radeon) 등 반도체 및 프로세서를 설계하고 제조하는 글로벌 기업입니다.", products: ["CPU (Ryzen, Threadripper, EPYC)", "GPU (Radeon)", "APU"] },
+            { name: "Anacomda Minpo", description: "주로 메모리(RAM) 및 SSD 제품을 생산하는 것으로 보입니다.", products: ["메모리(RAM)", "SSD"] },
+            { name: "Antec", description: "PC 케이스, 파워 서플라이, 쿨링 솔루션 등 컴퓨터 하드웨어를 제조합니다.", products: ["PC 케이스", "파워 서플라이", "CPU 쿨러"] },
+            { name: "Apacer", description: "메모리(RAM), SSD, USB 플래시 드라이브 등 스토리지 및 메모리 제품을 제조합니다.", products: ["메모리(RAM)", "SSD", "USB 플래시 드라이브", "산업용 스토리지"] },
+            { name: "APALTEK", description: "주로 컴퓨터 주변기기 및 액세서리를 유통하거나 제조하는 것으로 보입니다.", products: ["수랭 쿨러 (OEM/ODM)"] },
+            { name: "ARKTEK", description: "그래픽카드, 메인보드 등 컴퓨터 하드웨어 부품을 생산합니다.", products: ["그래픽카드"] },
+            { name: "ASUSTOR", description: "NAS(Network Attached Storage) 및 네트워크 스토리지 솔루션을 전문으로 합니다.", products: ["NAS (네트워크 스토리지)", "NVR (네트워크 비디오 레코더)"] },
+            { name: "AULA", description: "게이밍 키보드, 마우스, 헤드셋 등 게이밍 주변기기를 생산합니다.", products: ["게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "AVerMedia", description: "비디오 캡처 카드, 스트리밍 장비, 웹캠 등 멀티미디어 장비를 제조합니다.", products: ["비디오 캡처 카드", "웹캠", "마이크", "스트리밍 장비"] },
+            { name: "AZZA", description: "PC 케이스, 파워 서플라이, 쿨링 솔루션 등 컴퓨터 하드웨어를 생산합니다.", products: ["PC 케이스", "파워 서플라이", "수랭 쿨러"] },
+            { name: "BenQ", description: "모니터, 프로젝터, 게이밍 기어 등 디스플레이 및 디지털 기술 제품을 제조합니다.", products: ["모니터", "프로젝터", "게이밍 모니터", "게이밍 주변기기"] },
+            { name: "Bitspower", description: "커스텀 수랭 쿨링 시스템 부품을 전문적으로 제조합니다.", products: ["수랭 쿨링 피팅", "워터블록", "라디에이터 등 수랭 쿨링 시스템 부품"] },
+            { name: "Biwin", description: "SSD, 메모리(RAM), USB 플래시 드라이브 등 스토리지 제품을 제조합니다.", products: ["SSD", "메모리(RAM)", "USB 플래시 드라이브"] },
+            { name: "bloody", description: "게이밍 키보드, 마우스, 헤드셋 등 게이밍 주변기기를 생산합니다.", products: ["게이밍 마우스", "게이밍 키보드", "게이밍 헤드셋"] },
+            { name: "CASECOM", description: "주로 PC 케이스를 제조하는 회사입니다.", products: ["PC 케이스"] },
+            { name: "CHERRY", description: "기계식 키보드 스위치 및 키보드, 마우스 등 입력 장치를 전문으로 합니다.", products: ["기계식 키보드 스위치", "기계식 키보드", "마우스"] },
+            { name: "CHIEFTEC", description: "PC 케이스, 파워 서플라이 등 컴퓨터 하드웨어를 제조합니다.", products: ["PC 케이스", "파워 서플라이"] },
+            { name: "COOLLEO", description: "주로 PC 쿨링 솔루션을 생산하는 것으로 보입니다.", products: ["CPU 쿨러", "케이스 팬"] },
+            { name: "CRYORIG", description: "CPU 쿨러, 케이스 팬 등 PC 쿨링 솔루션을 전문으로 합니다.", products: ["CPU 쿨러", "케이스 팬"] },
+            { name: "Cudy", description: "네트워크 장비(라우터, Wi-Fi 어댑터 등)를 생산합니다.", products: ["Wi-Fi 라우터", "Wi-Fi 어댑터", "네트워크 스위치"] },
+            { name: "CWT", description: "파워 서플라이(PSU)의 OEM/ODM 제조를 전문으로 합니다.", products: ["파워 서플라이(PSU) (OEM/ODM)"] },
+            { name: "Dato", description: "주로 스토리지 제품(SSD, 메모리)을 생산하는 것으로 보입니다.", products: ["SSD", "메모리(RAM)"] },
+            { name: "Delta", description: "파워 서플라이, 쿨링 팬 등 전원 및 쿨링 솔루션을 제공하는 대형 제조사입니다.", products: ["파워 서플라이", "쿨링 팬", "서버 전원 공급 장치"] },
+            { name: "DELUX", description: "마우스, 키보드 등 컴퓨터 주변기기를 생산합니다.", products: ["마우스", "키보드", "웹캠"] },
+            { name: "Dynatron", description: "서버 및 워크스테이션용 쿨링 솔루션을 전문으로 합니다.", products: ["서버 쿨러", "워크스테이션 쿨러"] },
+            { name: "ECS", description: "메인보드, 미니 PC, 노트북 등 컴퓨터 하드웨어를 제조합니다.", products: ["메인보드", "미니 PC", "노트북"] },
+            { name: "EK", description: "수랭 쿨링 시스템 및 부품을 전문적으로 제조합니다.", products: ["수랭 워터블록", "라디에이터", "펌프", "피팅 등 수랭 쿨링 시스템 부품"] },
+            { name: "ELSA", description: "그래픽카드, 워크스테이션용 그래픽 솔루션 등을 제조합니다.", products: ["그래픽카드", "워크스테이션용 그래픽카드"] },
+            { name: "ENERMAX", description: "파워 서플라이, PC 케이스, 쿨링 솔루션 등 컴퓨터 하드웨어를 생산합니다.", products: ["파워 서플라이", "PC 케이스", "CPU 쿨러", "쿨링 팬"] },
+            { name: "Ewin", description: "주로 게이밍 의자를 생산하는 것으로 보입니다.", products: ["게이밍 의자"] },
+            { name: "Feixuan", description: "주로 컴퓨터 주변기기나 액세서리를 생산하는 것으로 보입니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기)"] },
+            { name: "FL-ESPORTS", description: "게이밍 키보드, 마우스 등 게이밍 주변기기를 전문으로 합니다.", products: ["게이밍 키보드", "게이밍 마우스"] },
+            { name: "Formula V Line", description: "특정 컴퓨터 부품 라인업 또는 액세서리 브랜드일 수 있습니다.", products: ["(정보 부족, 특정 컴퓨터 부품 라인업 또는 액세서리)"] },
+            { name: "Gaote", description: "주로 키보드 스위치를 생산하는 것으로 보입니다.", products: ["키보드 스위치"] },
+            { name: "Gateron", description: "기계식 키보드 스위치를 전문적으로 제조합니다.", products: ["기계식 키보드 스위치"] },
+            { name: "Genius", description: "마우스, 키보드, 웹캠, 스피커 등 다양한 컴퓨터 주변기기를 생산합니다.", products: ["마우스", "키보드", "웹캠", "스피커"] },
+            { name: "Geometric Future", description: "주로 독특한 디자인의 PC 케이스를 생산하는 것으로 보입니다.", products: ["PC 케이스"] },
+            { name: "GIGASTONE", description: "메모리 카드, USB 플래시 드라이브, 외장하드 등 스토리지 제품을 제조합니다.", products: ["메모리 카드", "USB 플래시 드라이브", "외장하드"] },
+            { name: "GreatWall", description: "파워 서플라이(PSU)를 제조하는 중국의 회사입니다.", products: ["파워 서플라이(PSU)"] },
+            { name: "HAILAN", description: "주로 컴퓨터 하드웨어 또는 주변기기를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 하드웨어 또는 주변기기)"] },
+            { name: "HDMI", description: "High-Definition Multimedia Interface의 약자로, 특정 회사 이름이라기보다는 디지털 비디오/오디오 인터페이스 표준입니다.", products: ["(회사 아님, HDMI 케이블, 어댑터 등 관련 제품)"] },
+            { name: "HKC", description: "모니터, 디스플레이 제품을 주로 생산하는 중국의 회사입니다.", products: ["모니터", "디스플레이"] },
+            { name: "Huntkey", description: "파워 서플라이, PC 케이스, 모니터 등 컴퓨터 하드웨어를 제조합니다.", products: ["파워 서플라이", "PC 케이스", "모니터"] },
+            { name: "ID-COOLING", description: "CPU 쿨러, 케이스 팬 등 PC 쿨링 솔루션을 전문으로 합니다.", products: ["CPU 쿨러", "케이스 팬", "수랭 쿨러"] },
+            { name: "INNO3D", description: "그래픽카드, SSD 등 컴퓨터 하드웨어 부품을 제조합니다.", products: ["그래픽카드", "SSD"] },
+            { name: "Innodisk", description: "산업용 SSD, 메모리 모듈 등 임베디드 및 산업용 스토리지 솔루션을 전문으로 합니다.", products: ["산업용 SSD", "산업용 메모리 모듈", "임베디드 스토리지"] },
+            { name: "Intel", description: "CPU(Core, Xeon), SSD, 네트워크 솔루션 등 반도체 및 프로세서를 설계하고 제조하는 글로벌 기업입니다.", products: ["CPU (Core, Xeon)", "SSD", "칩셋", "네트워크 솔루션"] },
+            { name: "IQUNIX", description: "디자인 지향적인 기계식 키보드 및 주변기기를 생산합니다.", products: ["기계식 키보드"] },
+            { name: "iRocks", description: "게이밍 키보드, 마우스, 헤드셋 등 게이밍 주변기기를 생산합니다.", products: ["게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋"] },
+            { name: "JERRZI", description: "주로 키보드 스위치를 생산하는 것으로 보입니다.", products: ["키보드 스위치"] },
+            { name: "JNP", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "JONSBO", description: "PC 케이스, 쿨링 솔루션, 액세서리 등 컴퓨터 하드웨어를 생산합니다.", products: ["PC 케이스", "CPU 쿨러", "쿨링 팬"] },
+            { name: "Keychron", description: "무선 기계식 키보드를 전문으로 하는 인기 있는 브랜드입니다.", products: ["무선 기계식 키보드"] },
+            { name: "KEYTOK", description: "주로 키보드 스위치 또는 키보드 관련 제품을 생산하는 것으로 보입니다.", products: ["키보드 스위치", "키캡"] },
+            { name: "KingBank", description: "메모리(RAM) 및 SSD를 제조하는 회사입니다.", products: ["메모리(RAM)", "SSD"] },
+            { name: "KIOXIA", description: "SSD, USB 플래시 드라이브, SD 카드 등 플래시 메모리 및 스토리지 솔루션을 전문으로 합니다. (구 도시바 메모리)", products: ["SSD", "USB 플래시 드라이브", "SD 카드", "microSD 카드"] },
+            { name: "KTC", description: "모니터, 디스플레이 제품을 주로 생산하는 회사입니다.", products: ["모니터", "디스플레이"] },
+            { name: "Lemon ET", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산하는 것으로 보입니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "Lexking", description: "키보드, 마우스 등 컴퓨터 주변기기를 생산합니다.", products: ["키보드", "마우스"] },
+            { name: "LITEON", description: "ODD(광학 드라이브), SSD, 파워 서플라이 등 다양한 전자 부품을 제조합니다.", products: ["ODD(광학 드라이브)", "SSD", "파워 서플라이"] },
+            { name: "Little Wing", description: "특정 컴퓨터 부품 또는 액세서리 브랜드일 수 있습니다.", products: ["(정보 부족, 특정 컴퓨터 부품 또는 액세서리)"] },
+            { name: "Longsys Lexar", description: "Lexar 브랜드로 메모리 카드, USB 플래시 드라이브, SSD 등 스토리지 제품을 생산합니다.", products: ["메모리 카드", "USB 플래시 드라이브", "SSD"] },
+            { name: "MediaTek", description: "주로 스마트폰, 태블릿, 스마트 TV 등에 사용되는 시스템 온 칩(SoC)을 설계하는 반도체 회사입니다.", products: ["모바일 SoC (스마트폰, 태블릿)", "Wi-Fi 칩셋", "스마트 TV 칩셋"] },
+            { name: "MINIS FORUM", description: "미니 PC 및 소형 폼팩터 PC를 전문으로 제조합니다.", products: ["미니 PC", "베어본 PC"] },
+            { name: "Mistel Leopold", description: "고급 기계식 키보드를 전문으로 하는 브랜드입니다.", products: ["기계식 키보드"] },
+            { name: "MOKA", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "Motospeed", description: "게이밍 키보드, 마우스 등 게이밍 주변기기를 생산합니다.", products: ["게이밍 키보드", "게이밍 마우스"] },
+            { name: "MSI", description: "메인보드, 그래픽카드, 노트북, 게이밍 PC 등 다양한 컴퓨터 하드웨어를 제조하는 대만의 선도 기업입니다.", products: ["메인보드", "그래픽카드", "게이밍 노트북", "게이밍 데스크톱", "모니터"] },
+            { name: "Neo Forza & goldKey", description: "메모리(RAM) 및 SSD를 생산하는 브랜드입니다.", products: ["메모리(RAM)", "SSD"] },
+            { name: "Netac", description: "SSD, USB 플래시 드라이브, 메모리 카드 등 스토리지 제품을 제조합니다.", products: ["SSD", "USB 플래시 드라이브", "메모리 카드"] },
+            { name: "Newegg", description: "컴퓨터 하드웨어 및 소프트웨어를 판매하는 미국의 대형 온라인 소매업체입니다.", products: ["(온라인 소매업체, 특정 제품 제조 아님)"] },
+            { name: "SINOTEX", description: "주로 컴퓨터 부품 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 부품 또는 액세서리)"] },
+            { name: "Noctua", description: "고성능 CPU 쿨러 및 쿨링 팬을 전문적으로 제조하는 오스트리아 회사입니다.", products: ["CPU 쿨러", "쿨링 팬", "써멀 컴파운드"] },
+            { name: "OCPC", description: "메모리(RAM), SSD, 그래픽카드 등 PC 부품을 생산합니다.", products: ["메모리(RAM)", "SSD", "그래픽카드"] },
+            { name: "Ocypus", description: "주로 게이밍 주변기기 또는 액세서리를 생산하는 것으로 보입니다.", products: ["(정보 부족, 일반적인 게이밍 주변기기 또는 액세서리)"] },
+            { name: "ORETON", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "OSCOO", description: "SSD, 메모리(RAM) 등 스토리지 제품을 제조합니다.", products: ["SSD", "메모리(RAM)"] },
+            { name: "OSHID", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "PentaWave", description: "주로 CPU 쿨러 등 PC 쿨링 솔루션을 생산하는 것으로 보입니다.", products: ["CPU 쿨러"] },
+            { name: "Phanteks", description: "PC 케이스, 쿨링 솔루션, 파워 서플라이 등 고성능 컴퓨터 하드웨어를 제조합니다.", products: ["PC 케이스", "CPU 쿨러", "수랭 쿨러", "파워 서플라이"] },
+            { name: "PNY", description: "그래픽카드, SSD, 메모리(RAM), USB 플래시 드라이브 등 다양한 컴퓨터 부품 및 스토리지 제품을 제조합니다.", products: ["그래픽카드", "SSD", "메모리(RAM)", "USB 플래시 드라이브"] },
+            { name: "POWEREX", description: "파워 서플라이(PSU)를 제조하는 회사입니다.", products: ["파워 서플라이(PSU)"] },
+            { name: "PRO GAMERS GROUP", description: "주로 게이밍 관련 제품을 취급하는 그룹 또는 브랜드입니다.", products: ["(게이밍 관련 제품 유통/판매)"] },
+            { name: "RAIJINTEK", description: "CPU 쿨러, 수랭 쿨러, PC 케이스 등 쿨링 솔루션 및 하드웨어를 생산합니다.", products: ["CPU 쿨러", "수랭 쿨러", "PC 케이스"] },
+            { name: "Royal Kludge", description: "기계식 키보드를 전문으로 하는 브랜드입니다.", products: ["기계식 키보드"] },
+            { name: "SANC", description: "주로 모니터 및 디스플레이 제품을 생산하는 것으로 보입니다.", products: ["모니터", "디스플레이"] },
+            { name: "SanDisk", description: "USB 플래시 드라이브, SD 카드, SSD 등 플래시 메모리 및 스토리지 솔루션을 전문으로 합니다.", products: ["USB 플래시 드라이브", "SD 카드", "microSD 카드", "SSD"] },
+            { name: "SAPPHIRE", description: "AMD Radeon 그래픽카드를 전문적으로 제조하는 회사입니다.", products: ["AMD Radeon 그래픽카드"] },
+            { name: "SCYTHE", description: "CPU 쿨러, 쿨링 팬, PC 액세서리 등 쿨링 솔루션을 전문으로 합니다.", products: ["CPU 쿨러", "쿨링 팬"] },
+            { name: "Seagate", description: "HDD(하드 디스크 드라이브), SSD 등 데이터 스토리지 솔루션을 전문으로 하는 글로벌 기업입니다.", products: ["HDD(하드 디스크 드라이브)", "SSD", "NAS 스토리지"] },
+            { name: "Sharkoon", description: "PC 케이스, 게이밍 주변기기, 쿨링 솔루션 등 다양한 컴퓨터 하드웨어를 제조합니다.", products: ["PC 케이스", "게이밍 마우스", "게이밍 키보드", "헤드셋", "쿨링 솔루션"] },
+            { name: "ShiZao", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "Silicon Power", description: "SSD, USB 플래시 드라이브, 메모리 카드, RAM 등 스토리지 및 메모리 제품을 제조합니다.", products: ["SSD", "USB 플래시 드라이브", "메모리 카드", "메모리(RAM)"] },
+            { name: "SK hynix", description: "메모리 반도체(DRAM, NAND 플래시)를 제조하는 한국의 글로벌 기업입니다.", products: ["DRAM (메모리)", "NAND 플래시 (SSD)", "CIS (CMOS 이미지 센서)"] },
+            { name: "Soeyi", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "Superchannel(SAMA)", description: "PC 케이스, 파워 서플라이 등 컴퓨터 하드웨어를 생산하는 브랜드입니다.", products: ["PC 케이스", "파워 서플라이"] },
+            { name: "Synology", description: "NAS(Network Attached Storage) 및 네트워크 솔루션을 전문으로 하는 회사입니다.", products: ["NAS(네트워크 스토리지)", "라우터", "네트워크 감시 솔루션"] },
+            { name: "Targetever", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "TCOMAS", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산합니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "TECNO", description: "주로 스마트폰, 태블릿 등 모바일 기기를 생산하는 회사입니다.", products: ["스마트폰", "태블릿", "노트북"] },
+            { name: "Topdisk", description: "SSD, USB 플래시 드라이브 등 스토리지 제품을 생산합니다.", products: ["SSD", "USB 플래시 드라이브"] },
+            { name: "TOROSUS", description: "주로 게이밍 주변기기 또는 액세서리를 생산하는 것으로 보입니다.", products: ["(정보 부족, 일반적인 게이밍 주변기기 또는 액세서리)"] },
+            { name: "TTC", description: "주로 기계식 키보드 스위치를 생산하는 회사입니다.", products: ["기계식 키보드 스위치"] },
+            { name: "UGREEN", description: "충전기, 케이블, 허브 등 다양한 전자 액세서리 및 주변기기를 생산합니다.", products: ["충전기", "케이블", "USB 허브", "오디오/비디오 어댑터"] },
+            { name: "v-color", description: "고성능 메모리(RAM)를 전문으로 제조하는 회사입니다.", products: ["고성능 메모리(RAM)"] },
+            { name: "VALKYRIE", description: "주로 PC 쿨링 솔루션 또는 게이밍 하드웨어를 생산하는 것으로 보입니다.", products: ["수랭 쿨러", "CPU 쿨러", "게이밍 주변기기"] },
+            { name: "Verbatim CMC", description: "CD, DVD, 블루레이 디스크, USB 드라이브, SSD 등 스토리지 미디어를 제조합니다.", products: ["CD", "DVD", "블루레이 디스크", "USB 드라이브", "SSD", "외장하드"] },
+            { name: "WEIHAI DAEWOO", description: "주로 컴퓨터 주변기기 또는 액세서리를 생산하는 것으로 보입니다.", products: ["(정보 부족, 일반적인 컴퓨터 주변기기 또는 액세서리)"] },
+            { name: "Western Digital", description: "HDD(하드 디스크 드라이브), SSD 등 데이터 스토리지 솔루션을 전문으로 하는 글로벌 기업입니다.", products: ["HDD(하드 디스크 드라이브)", "SSD", "네트워크 스토리지", "외장하드"] },
+            { name: "WOOTING", description: "아날로그 기계식 키보드를 전문으로 하는 혁신적인 브랜드입니다.", products: ["아날로그 기계식 키보드"] },
+            { name: "XIGMATEK", description: "CPU 쿨러, PC 케이스, 파워 서플라이 등 쿨링 솔루션 및 하드웨어를 생산합니다.", products: ["CPU 쿨러", "PC 케이스", "파워 서플라이"] },
+            { name: "XOC", description: "주로 오버클럭 관련 제품 또는 고성능 그래픽카드를 의미할 수 있습니다.", products: ["(정보 부족, 고성능 그래픽카드, 오버클럭 관련 부품)"] },
+            { name: "XYZ", description: "일반적인 컴퓨터 부품 또는 액세서리 브랜드일 수 있습니다. (정보 부족)", products: ["(정보 부족, 일반적인 컴퓨터 부품 또는 액세서리)"] },
+            { name: "Yuan Palit", description: "Palit 브랜드로 그래픽카드를 제조하는 회사입니다.", products: ["그래픽카드"] },
+            { name: "ZOTAC", description: "그래픽카드, 미니 PC, SSD 등 컴퓨터 하드웨어 부품을 제조합니다.", products: ["그래픽카드", "미니 PC", "SSD"] }
+        ];
+
+        const companyListElement = document.getElementById('companyList');
+        const searchInputElement = document.getElementById('searchInput');
+        const categoryFilterElement = document.getElementById('categoryFilter');
+        const categoryChartCanvas = document.getElementById('categoryChart').getContext('2d');
+        const noResultsElement = document.getElementById('noResults');
+        let categoryChart;
+
+        const mainCategories = {
+            "CPU/GPU/메인보드": ["메인보드", "그래픽카드", "CPU", "APU", "칩셋"],
+            "메모리/저장장치": ["메모리(RAM)", "SSD", "HDD", "USB 플래시 드라이브", "메모리 카드", "외장하드", "스토리지", "산업용 스토리지", "NAND 플래시", "DRAM"],
+            "PC 케이스/쿨링/파워": ["PC 케이스", "파워 서플라이", "CPU 쿨러", "수랭 쿨러", "쿨링 팬", "케이스 팬", "써멀구리스", "쿨링 솔루션", "서버 쿨러", "일체형 수랭 쿨러(AIO cooler)", "파워 서플라이(PSU)"],
+            "게이밍 주변기기": ["게이밍 주변기기", "게이밍 키보드", "게이밍 마우스", "게이밍 헤드셋", "게이밍 의자", "게이밍 모니터", "게이밍 PC 및 주변기기", "아날로그 기계식 키보드"],
+            "일반 주변기기/액세서리": ["키보드", "마우스", "헤드셋", "모니터", "프로젝터", "웹캠", "스피커", "키캡", "키보드 스위치", "기계식 키보드", "관련 액세서리", "피팅 등 수랭 쿨링 시스템 부품", "플래시 메모리 카드 리더기", "케이블", "USB 허브", "오디오/비디오 어댑터", "충전기", "PC 액세서리"],
+            "노트북/완제품 PC": ["노트북", "미니 PC", "데스크톱 PC", "휴대용 워크스테이션", "서버", "베어본 PC", "게이밍 데스크톱", "노트북 (ROG, ZenBook 등)"],
+            "네트워크/NAS": ["NAS (네트워크 스토리지)", "NVR (네트워크 비디오 레코더)", "Wi-Fi 라우터", "Wi-Fi 어댑터", "네트워크 스위치", "네트워크 솔루션"],
+            "전문 솔루션/기타": ["비디오 캡처 카드", "스트리밍 장비", "멀티미디어 장비", "산업용 SSD", "산업용 메모리 모듈", "임베디드 스토리지", "서버 전원 공급 장치", "워크스테이션용 그래픽카드", "수랭 쿨러 (OEM/ODM)", "파워 서플라이(PSU) (OEM/ODM)", "스마트폰", "태블릿", "모바일 SoC (스마트폰, 태블릿)", "Wi-Fi 칩셋", "스마트 TV 칩셋", "ODD(광학 드라이브)", "CIS (CMOS 이미지 센서)", "(온라인 소매업체, 특정 제품 제조 아님)", "(회사 아님, HDMI 케이블, 어댑터 등 관련 제품)", "(정보 부족, 일반적인 컴퓨터 주변기기)", "(정보 부족, 특정 컴퓨터 부품 라인업 또는 액세서리)", "(정보 부족, 일반적인 컴퓨터 하드웨어 또는 주변기기)", "(정보 부족, 일반적인 게이밍 주변기기 또는 액세서리)", "(정보 부족, 고성능 그래픽카드, 오버클럭 관련 부품)"]
+        };
+        
+        function getCompanyCategories(products) {
+            const categories = new Set();
+            products.forEach(product => {
+                for (const [mainCat, keywords] of Object.entries(mainCategories)) {
+                    if (keywords.some(keyword => product.toLowerCase().includes(keyword.toLowerCase().replace(/\(.*\)/g, '').trim()))) {
+                        categories.add(mainCat);
+                    }
+                }
+            });
+            if (categories.size === 0 && products.length > 0 && !products[0].startsWith("(")) { // Assign to '일반 주변기기/액세서리' if no specific match
+                 if (!products.some(p => p.toLowerCase().includes("회사 아님") || p.toLowerCase().includes("온라인 소매업체"))) {
+                    categories.add("일반 주변기기/액세서리");
+                 }
+            }
+            return Array.from(categories);
+        }
+
+        function populateCategories() {
+            const categories = new Set();
+            companyData.forEach(company => {
+                const companyCats = getCompanyCategories(company.products);
+                companyCats.forEach(cat => categories.add(cat));
+            });
+            
+            const sortedCategories = Array.from(categories).sort((a,b) => a.localeCompare(b));
+            
+            sortedCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilterElement.appendChild(option);
+            });
+        }
+
+        function renderCompanyList(filteredData) {
+            companyListElement.innerHTML = '';
+            if (filteredData.length === 0) {
+                noResultsElement.classList.remove('hidden');
+            } else {
+                noResultsElement.classList.add('hidden');
+            }
+
+            filteredData.sort((a,b) => a.name.localeCompare(b.name)).forEach(company => {
+                const card = document.createElement('div');
+                card.className = 'company-card bg-white p-6 rounded-lg shadow-lg border border-slate-200 flex flex-col';
+                
+                let productsHtml = '<ul class="list-disc list-inside mt-2 space-y-1 text-sm">';
+                company.products.forEach(product => {
+                    productsHtml += `<li class="text-slate-600">${product}</li>`;
+                });
+                productsHtml += '</ul>';
+
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold text-sky-700 mb-2">${company.name}</h3>
+                    <p class="text-sm text-slate-600 mb-3 flex-grow">${company.description}</p>
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">주력 상품</h4>
+                        ${productsHtml}
+                    </div>
+                `;
+                companyListElement.appendChild(card);
+            });
+        }
+        
+        function wrapLabel(label, maxCharsPerLine = 10) {
+            if (label.length <= maxCharsPerLine) {
+                return label;
+            }
+            const words = label.split(' ');
+            let currentLine = '';
+            const lines = [];
+            for (const word of words) {
+                if ((currentLine + word).length > maxCharsPerLine && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            }
+            if (currentLine.trim().length > 0) {
+                lines.push(currentLine.trim());
+            }
+            return lines;
+        }
+
+
+        function updateChart(filteredData) {
+            const categoryCounts = {};
+            const allDisplayCategories = Array.from(new Set(Object.keys(mainCategories)
+                .concat(Array.from(categoryFilterElement.options).slice(1).map(opt => opt.value)))
+            ).sort((a,b) => a.localeCompare(b));
+
+
+            allDisplayCategories.forEach(cat => categoryCounts[cat] = 0);
+            
+            filteredData.forEach(company => {
+                const companyCats = getCompanyCategories(company.products);
+                companyCats.forEach(cat => {
+                    if (categoryCounts.hasOwnProperty(cat)) {
+                        categoryCounts[cat]++;
+                    }
+                });
+            });
+
+            const chartData = {
+                labels: Object.keys(categoryCounts).map(label => wrapLabel(label)),
+                datasets: [{
+                    label: '회사 수',
+                    data: Object.values(categoryCounts),
+                    backgroundColor: [
+                        'rgba(56, 189, 248, 0.6)', 'rgba(34, 197, 94, 0.6)', 'rgba(249, 115, 22, 0.6)',
+                        'rgba(239, 68, 68, 0.6)', 'rgba(168, 85, 247, 0.6)', 'rgba(236, 72, 153, 0.6)',
+                        'rgba(14, 165, 233, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)',
+                        'rgba(220, 38, 38, 0.6)', 'rgba(147, 51, 234, 0.6)', 'rgba(219, 39, 119, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(56, 189, 248, 1)', 'rgba(34, 197, 94, 1)', 'rgba(249, 115, 22, 1)',
+                        'rgba(239, 68, 68, 1)', 'rgba(168, 85, 247, 1)', 'rgba(236, 72, 153, 1)',
+                        'rgba(14, 165, 233, 1)', 'rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)',
+                        'rgba(220, 38, 38, 1)', 'rgba(147, 51, 234, 1)', 'rgba(219, 39, 119, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+
+            categoryChart = new Chart(categoryChartCanvas, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { 
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0 
+                            }
+                        },
+                        y: {
+                           ticks: {
+                               font: {
+                                   size: 10
+                               }
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function filterData() {
+            const searchTerm = searchInputElement.value.toLowerCase();
+            const selectedCategory = categoryFilterElement.value;
+
+            const filtered = companyData.filter(company => {
+                const nameMatch = company.name.toLowerCase().includes(searchTerm);
+                
+                let categoryMatch = true;
+                if (selectedCategory) {
+                    const companyCats = getCompanyCategories(company.products);
+                    categoryMatch = companyCats.includes(selectedCategory);
+                }
+                return nameMatch && categoryMatch;
+            });
+
+            renderCompanyList(filtered);
+            updateChart(filtered);
+        }
+
+        searchInputElement.addEventListener('input', filterData);
+        categoryFilterElement.addEventListener('change', filterData);
+
+        populateCategories();
+        renderCompanyList(companyData);
+        updateChart(companyData);
+    </script>
+</body>
+</html>
