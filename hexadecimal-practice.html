@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16진수 연산 연습기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        input[type="number"], input[type="text"] {
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+        input[type="checkbox"] {
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 0.25rem;
+            border-color: #d1d5db;
+            color: #4f46e5;
+            margin-right: 0.5rem;
+        }
+        .feedback {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .feedback.correct {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #4ade80;
+        }
+        .feedback.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+        /* --- 언어 선택 버튼 스타일 수정 --- */
+        .lang-selector {
+            position: fixed; /* 화면에 고정 */
+            top: 1rem;       /* 위에서 1rem */
+            right: 1rem;     /* 오른쪽에서 1rem */
+            z-index: 50;     /* 다른 요소들 위에 보이도록 z-index 설정 */
+        }
+        .lang-btn {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            border: 2px solid transparent;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .lang-btn.active {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <!-- 언어 선택 버튼을 body 바로 아래로 이동 -->
+    <div class="lang-selector">
+        <button id="lang-ko" class="lang-btn active">한국어</button>
+        <button id="lang-en" class="lang-btn">English</button>
+    </div>
+
+    <div class="w-full max-w-lg mx-auto p-4">
+        
+        <!-- 설정 화면 -->
+        <div id="setup-screen" class="card">
+            <!-- 카드 내부에 있던 언어 선택 버튼 제거 -->
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6" data-lang-key="title">16진수 연산 연습</h1>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-lg font-medium text-gray-700 mb-2" data-lang-key="op_type">연산 종류</label>
+                    <div class="flex items-center space-x-6">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="op-add" value="add" checked>
+                            <span data-lang-key="addition">덧셈</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="op-sub" value="sub" checked>
+                            <span data-lang-key="subtraction">뺄셈</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="max-digits" class="block text-lg font-medium text-gray-700 mb-2" data-lang-key="max_digits">최대 자릿수</label>
+                    <input type="number" id="max-digits" value="2" min="1" max="8" class="text-center">
+                </div>
+
+                <div>
+                    <label for="num-questions" class="block text-lg font-medium text-gray-700 mb-2" data-lang-key="num_questions">문제 수</label>
+                    <input type="number" id="num-questions" value="10" min="1" max="50" class="text-center">
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn btn-primary w-full mt-8" data-lang-key="start_button">시작하기</button>
+            <p id="setup-error" class="text-red-500 text-center mt-4"></p>
+        </div>
+
+        <!-- 퀴즈 화면 -->
+        <div id="quiz-screen" class="card hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800"><span data-lang-key="question_prefix">문제</span> <span id="current-q-num"></span> / <span id="total-q-num"></span></h2>
+                <button id="home-btn-quiz" class="text-sm text-gray-500 hover:text-gray-800" data-lang-key="home_button_quiz">처음으로</button>
+            </div>
+            
+            <div class="text-center my-8">
+                <p id="question" class="text-4xl font-mono font-bold text-gray-800"></p>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl font-mono text-gray-500">0x</span>
+                <input type="text" id="answer-input" data-lang-key-placeholder="answer_placeholder" placeholder="정답 입력" class="flex-grow text-2xl font-mono uppercase">
+            </div>
+            
+            <div id="feedback-container" class="mt-4"></div>
+
+            <button id="submit-btn" class="btn btn-primary w-full mt-6" data-lang-key="submit_button">제출</button>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="results-screen" class="card hidden text-center">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6" data-lang-key="results_title">퀴즈 결과</h1>
+            
+            <div class="space-y-3 text-lg">
+                <p><span data-lang-key="total_questions">총 문제</span>: <span id="total-stat" class="font-bold"></span></p>
+                <p class="text-green-600"><span data-lang-key="correct_answers">정답</span>: <span id="correct-stat" class="font-bold"></span></p>
+                <p class="text-red-600"><span data-lang-key="incorrect_answers">오답</span>: <span id="incorrect-stat" class="font-bold"></span></p>
+                <p><span data-lang-key="accuracy">정답률</span>: <span id="accuracy-stat" class="font-bold text-2xl text-blue-600"></span></p>
+            </div>
+
+            <div class="flex space-x-4 mt-8">
+                <button id="retry-btn" class="btn btn-primary w-full" data-lang-key="retry_button">다시하기</button>
+                <button id="home-btn" class="btn btn-secondary w-full" data-lang-key="home_button">홈으로</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const i18n = {
+            'ko': {
+                title: '16진수 연산 연습',
+                op_type: '연산 종류',
+                addition: '덧셈',
+                subtraction: '뺄셈',
+                max_digits: '최대 자릿수',
+                num_questions: '문제 수',
+                start_button: '시작하기',
+                question_prefix: '문제',
+                answer_placeholder: '정답 입력',
+                submit_button: '제출',
+                next_button: '다음',
+                results_title: '퀴즈 결과',
+                total_questions: '총 문제',
+                correct_answers: '정답',
+                incorrect_answers: '오답',
+                accuracy: '정답률',
+                retry_button: '다시하기',
+                home_button: '홈으로',
+                home_button_quiz: '처음으로',
+                feedback_correct: '정답입니다!',
+                feedback_incorrect: '오답입니다.',
+                feedback_correct_answer: '정답',
+                error_select_op: '적어도 하나의 연산 종류를 선택해야 합니다.',
+                error_num_questions: '문제 수는 1에서 50 사이여야 합니다.',
+                error_max_digits: '자릿수는 1에서 8 사이여야 합니다.'
+            },
+            'en': {
+                title: 'Hexadecimal Practice',
+                op_type: 'Operation Type',
+                addition: 'Addition',
+                subtraction: 'Subtraction',
+                max_digits: 'Max Digits',
+                num_questions: 'Number of Questions',
+                start_button: 'Start',
+                question_prefix: 'Question',
+                answer_placeholder: 'Enter Answer',
+                submit_button: 'Submit',
+                next_button: 'Next',
+                results_title: 'Quiz Results',
+                total_questions: 'Total Questions',
+                correct_answers: 'Correct',
+                incorrect_answers: 'Incorrect',
+                accuracy: 'Accuracy',
+                retry_button: 'Retry',
+                home_button: 'Home',
+                home_button_quiz: 'Home',
+                feedback_correct: 'Correct!',
+                feedback_incorrect: 'Incorrect.',
+                feedback_correct_answer: 'Correct Answer',
+                error_select_op: 'You must select at least one operation type.',
+                error_num_questions: 'Number of questions must be between 1 and 50.',
+                error_max_digits: 'Max digits must be between 1 and 8.'
+            }
+        };
+
+        let currentLanguage = 'ko';
+
+        // DOM Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const opAddCheckbox = document.getElementById('op-add');
+        const opSubCheckbox = document.getElementById('op-sub');
+        const maxDigitsInput = document.getElementById('max-digits');
+        const numQuestionsInput = document.getElementById('num-questions');
+        const startBtn = document.getElementById('start-btn');
+        const setupError = document.getElementById('setup-error');
+        const currentQNum = document.getElementById('current-q-num');
+        const totalQNum = document.getElementById('total-q-num');
+        const questionEl = document.getElementById('question');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const homeBtnQuiz = document.getElementById('home-btn-quiz');
+        const totalStat = document.getElementById('total-stat');
+        const correctStat = document.getElementById('correct-stat');
+        const incorrectStat = document.getElementById('incorrect-stat');
+        const accuracyStat = document.getElementById('accuracy-stat');
+        const retryBtn = document.getElementById('retry-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const langKoBtn = document.getElementById('lang-ko');
+        const langEnBtn = document.getElementById('lang-en');
+
+        let problems = [];
+        let currentProblemIndex = 0;
+        let stats = { correct: 0, incorrect: 0 };
+        let quizSettings = {};
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.documentElement.lang = lang;
+            
+            langKoBtn.classList.toggle('active', lang === 'ko');
+            langEnBtn.classList.toggle('active', lang === 'en');
+
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                el.textContent = i18n[lang][key];
+            });
+            document.querySelectorAll('[data-lang-key-placeholder]').forEach(el => {
+                const key = el.dataset.langKeyPlaceholder;
+                el.placeholder = i18n[lang][key];
+            });
+        }
+
+        langKoBtn.addEventListener('click', () => setLanguage('ko'));
+        langEnBtn.addEventListener('click', () => setLanguage('en'));
+
+        function generateRandomHex(digits) {
+            const maxDecimal = Math.pow(16, digits) - 1;
+            const minDecimal = digits > 1 ? Math.pow(16, digits - 1) : 1;
+            const decimal = Math.floor(Math.random() * (maxDecimal - minDecimal + 1)) + minDecimal;
+            return decimal.toString(16).toUpperCase();
+        }
+
+        function generateProblem() {
+            const selectedOps = [];
+            if (opAddCheckbox.checked) selectedOps.push('+');
+            if (opSubCheckbox.checked) selectedOps.push('-');
+
+            if (selectedOps.length === 0) {
+                setupError.textContent = i18n[currentLanguage].error_select_op;
+                return null;
+            }
+            setupError.textContent = '';
+
+            const digits = parseInt(maxDigitsInput.value);
+            const operation = selectedOps[Math.floor(Math.random() * selectedOps.length)];
+            
+            let num1Hex = generateRandomHex(digits);
+            let num2Hex = generateRandomHex(digits);
+            let num1Dec = parseInt(num1Hex, 16);
+            let num2Dec = parseInt(num2Hex, 16);
+            let answerDec;
+
+            if (operation === '-') {
+                if (num1Dec < num2Dec) {
+                    [num1Dec, num2Dec] = [num2Dec, num1Dec];
+                    [num1Hex, num2Hex] = [num2Hex, num1Hex];
+                }
+                answerDec = num1Dec - num2Dec;
+            } else {
+                answerDec = num1Dec + num2Dec;
+            }
+            
+            const answerHex = answerDec.toString(16).toUpperCase();
+            return { text: `${num1Hex} ${operation} ${num2Hex}`, answer: answerHex };
+        }
+        
+        startBtn.addEventListener('click', () => {
+            const numQuestions = parseInt(numQuestionsInput.value);
+            if (numQuestions < 1 || numQuestions > 50) {
+                setupError.textContent = i18n[currentLanguage].error_num_questions;
+                return;
+            }
+            const maxDigits = parseInt(maxDigitsInput.value);
+             if (maxDigits < 1 || maxDigits > 8) {
+                setupError.textContent = i18n[currentLanguage].error_max_digits;
+                return;
+            }
+
+            quizSettings = { add: opAddCheckbox.checked, sub: opSubCheckbox.checked, digits: maxDigits, count: numQuestions };
+            problems = [];
+            for (let i = 0; i < numQuestions; i++) {
+                const problem = generateProblem();
+                if (!problem) return;
+                problems.push(problem);
+            }
+            
+            currentProblemIndex = 0;
+            stats = { correct: 0, incorrect: 0 };
+            
+            setupScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            displayProblem();
+        });
+
+        function displayProblem() {
+            if (currentProblemIndex >= problems.length) {
+                showResults();
+                return;
+            }
+            
+            const problem = problems[currentProblemIndex];
+            questionEl.textContent = problem.text + ' = ?';
+            currentQNum.textContent = currentProblemIndex + 1;
+            totalQNum.textContent = problems.length;
+            
+            answerInput.value = '';
+            answerInput.disabled = false;
+            feedbackContainer.innerHTML = '';
+            submitBtn.textContent = i18n[currentLanguage].submit_button;
+            submitBtn.onclick = handleSubmit;
+            answerInput.focus();
+        }
+
+        function handleSubmit() {
+            const userAnswer = answerInput.value.toUpperCase().trim();
+            if (userAnswer === '') return;
+
+            const correctAnswer = problems[currentProblemIndex].answer;
+            const isCorrect = userAnswer === correctAnswer;
+
+            let feedbackHTML;
+            if (isCorrect) {
+                stats.correct++;
+                feedbackHTML = `<div class="feedback correct"><p><strong>${i18n[currentLanguage].feedback_correct}</strong></p></div>`;
+            } else {
+                stats.incorrect++;
+                feedbackHTML = `
+                    <div class="feedback incorrect">
+                        <p><strong>${i18n[currentLanguage].feedback_incorrect}</strong></p>
+                        <p>${i18n[currentLanguage].feedback_correct_answer}: <strong>${correctAnswer}</strong></p>
+                    </div>`;
+            }
+            
+            feedbackContainer.innerHTML = feedbackHTML;
+            answerInput.disabled = true;
+            submitBtn.textContent = i18n[currentLanguage].next_button;
+            submitBtn.onclick = handleNext;
+        }
+        
+        function handleNext() {
+            currentProblemIndex++;
+            displayProblem();
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            
+            if (!quizScreen.classList.contains('hidden')) {
+                // If answer input is disabled, it means we've submitted and are ready for the next question.
+                if (answerInput.disabled) {
+                    handleNext();
+                } else {
+                    // If answer input is enabled, submit the answer.
+                    handleSubmit();
+                }
+            }
+        });
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            
+            const total = problems.length;
+            const accuracy = total > 0 ? ((stats.correct / total) * 100).toFixed(1) : 0;
+
+            totalStat.textContent = total;
+            correctStat.textContent = stats.correct;
+            incorrectStat.textContent = stats.incorrect;
+            accuracyStat.textContent = `${accuracy}%`;
+        }
+
+        retryBtn.addEventListener('click', () => {
+            opAddCheckbox.checked = quizSettings.add;
+            opSubCheckbox.checked = quizSettings.sub;
+            maxDigitsInput.value = quizSettings.digits;
+            numQuestionsInput.value = quizSettings.count;
+            startBtn.click();
+        });
+
+        function goHome() {
+            resultsScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            setupError.textContent = '';
+        }
+
+        homeBtn.addEventListener('click', goHome);
+        homeBtnQuiz.addEventListener('click', goHome);
+
+        // Initialize with default language
+        setLanguage(currentLanguage);
+    </script>
+</body>
+</html>
